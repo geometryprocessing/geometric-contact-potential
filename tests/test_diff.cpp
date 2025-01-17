@@ -297,10 +297,12 @@ TEST_CASE("shape-neumann-nodes", "[test_adjoint]")
 
 	VariableToSimulationGroup variable_to_simulations;
 	variable_to_simulations.push_back(std::make_unique<ShapeVariableToSimulation>(state_ptr, CompositeParametrization()));
-	{
-		VariableToBoundaryNodes variable_to_node(*state_ptr, {}, {2});
-		variable_to_simulations[0]->set_output_indexing(variable_to_node.get_output_indexing());
-	}
+
+	json composite_map_args = R"({
+		"composite_map_type": "boundary",
+		"surface_selection": [2]
+	})"_json;
+	variable_to_simulations[0]->set_output_indexing(composite_map_args);
 
 	auto obj = AdjointOptUtils::create_form(opt_args["functionals"], variable_to_simulations, states);
 
@@ -464,7 +466,7 @@ TEST_CASE("shape-neumann-nodes", "[test_adjoint]")
 // 				state.assemble_stiffness_mat();
 // 				auto form = std::make_shared<BodyForm>(state.n_bases * dim, state.n_pressure_bases, state.boundary_nodes, state.local_boundary,
 // 													   state.local_neumann_boundary, state.n_boundary_samples(), state.rhs, *state.solve_data.rhs_assembler,
-// 													   state.assembler.density(), /*apply_DBC=*/true, /*is_formulation_mixed=*/false,
+// 													   state.assembler.density(), /*is_formulation_mixed=*/false,
 // 													   state.problem->is_time_dependent());
 // 				form->update_quantities(t0 + i * dt, u[i - 1]);
 
@@ -481,7 +483,7 @@ TEST_CASE("shape-neumann-nodes", "[test_adjoint]")
 // 				state.assemble_stiffness_mat();
 // 				auto form = std::make_shared<BodyForm>(state.n_bases * dim, state.n_pressure_bases, state.boundary_nodes, state.local_boundary,
 // 													   state.local_neumann_boundary, state.n_boundary_samples(), state.rhs, *state.solve_data.rhs_assembler,
-// 													   state.assembler.density(), /*apply_DBC=*/true, /*is_formulation_mixed=*/false,
+// 													   state.assembler.density(), /*is_formulation_mixed=*/false,
 // 													   state.problem->is_time_dependent());
 // 				form->update_quantities(t0 + i * dt, u[i - 1]);
 
@@ -763,10 +765,12 @@ TEST_CASE("shape-contact-force-norm", "[test_adjoint]")
 
 	VariableToSimulationGroup variable_to_simulations;
 	variable_to_simulations.push_back(std::make_unique<ShapeVariableToSimulation>(state_ptr, CompositeParametrization()));
-	{
-		VariableToBoundaryNodesExclusive variable_to_node(*state_ptr, {}, {1, 2});
-		variable_to_simulations[0]->set_output_indexing(variable_to_node.get_output_indexing());
-	}
+
+	json composite_map_args = R"({
+		"composite_map_type": "boundary_excluding_surface",
+		"surface_selection": [1, 2]
+	})"_json;
+	variable_to_simulations[0]->set_output_indexing(composite_map_args);
 
 	auto obj = AdjointOptUtils::create_form(opt_args["functionals"], variable_to_simulations, states);
 
@@ -1341,12 +1345,15 @@ TEST_CASE("control-pressure-nodes-3d", "[.][test_adjoint]")
 
 	VariableToSimulationGroup variable_to_simulations;
 	{
-		std::vector<int> pressure_boundaries = {2};
 		auto v2s = std::make_shared<PressureVariableToSimulation>(state_ptr, CompositeParametrization());
-		v2s->set_pressure_boundaries(pressure_boundaries);
-		Eigen::VectorXi indexing(5);
-		indexing << 0, 1, 2, 3, 4;
-		v2s->set_output_indexing(indexing);
+
+		json composite_map_args = R"({
+			"composite_map_type": "indices",
+			"composite_map_indices": [0,1,2,3,4],
+			"surface_selection": [2]
+		})"_json;
+
+		v2s->set_output_indexing(composite_map_args);
 		variable_to_simulations.push_back(v2s);
 	}
 
