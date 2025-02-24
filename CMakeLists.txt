@@ -276,6 +276,10 @@ target_link_libraries(polyfem PUBLIC units::units)
 include(yaml)
 target_link_libraries(polyfem PUBLIC yaml-cpp::yaml-cpp)
 
+# GSL library
+target_include_directories(polyfem PUBLIC "/usr/local/include/")
+target_link_libraries(polyfem PRIVATE "/usr/local/lib/libgsl.a")
+
 ################################################################################
 # Optional libraries
 ################################################################################
