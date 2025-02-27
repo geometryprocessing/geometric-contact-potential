@@ -92,6 +92,13 @@ protected:
     const std::vector<basis::ElementBases> &bases_;
     const std::vector<mesh::LocalBoundary> &total_local_boundary_;
 
+    struct LocalBoundary {
+        int elem_id;
+        Eigen::VectorXi nodes;
+    };
+
+    std::vector<Eigen::VectorXi> m_local_boundary_to_global;
+
     /// @brief The full vertex positions at rest (#FV × dim).
     Eigen::MatrixXd m_full_rest_positions;
     /// @brief The vertex positions at rest (#V × dim).
