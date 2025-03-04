@@ -12,25 +12,15 @@
 #include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_vector.h>
 
-struct counter_params {
-  gsl_function * f;
-  int neval;
-} ;
 
-double 
-counter (double x, void * params)
-{
-  struct counter_params * p = (struct counter_params *) params;
-  p->neval++ ; /* increment counter */
-  return GSL_FN_EVAL(p->f, x);
-}
-
-
-TEST_CASE("GSL", "[gsl]") 
+TEST_CASE("GSL-double-integral", "[gsl]") 
 {
     double result = 0, abserr = 0;
 	gsl_integration_workspace* w = gsl_integration_workspace_alloc(1000);
 	// gsl_integration_workspace* w_inner = gsl_integration_workspace_alloc(1000);
+
+	constexpr double epsilon = 1e-3;
+	constexpr int quad_rule = GSL_INTEG_GAUSS61;
 
     gsl_function f;
 	f.function = [](double x, void * p) -> double {
@@ -43,8 +33,8 @@ TEST_CASE("GSL", "[gsl]")
 			Eigen::Vector2d v00, v01, v10, v11;
 			v00 << 0, 0;
 			v01 << 1, 0;
-			v11 << 0, 0.1;
-			v10 << 1, 0.11;
+			v11 << 0, 0.01;
+			v10 << 1, 0.011;
 
 			Eigen::Vector2d n0, n1;
 			n0 << v00(1) - v01(1), v01(0) - v00(0);
@@ -78,8 +68,8 @@ TEST_CASE("GSL", "[gsl]")
 		gsl_integration_workspace* w_inner = gsl_integration_workspace_alloc(1000); // (gsl_integration_workspace*)p;
 		int status = gsl_integration_qag(
 			&f_inner, 0., 1., 
-			0., 1.e-4, w_inner->limit,
-			GSL_INTEG_GAUSS15, w_inner,
+			0., epsilon, w_inner->limit,
+			quad_rule, w_inner,
 			&result_inner,
 			&abserr_inner);
 		gsl_integration_workspace_free(w_inner);
@@ -90,12 +80,34 @@ TEST_CASE("GSL", "[gsl]")
 
 	int status = gsl_integration_qag(
 		&f, 0., 1., 
-		0., 1.e-4, w->limit,
-		GSL_INTEG_GAUSS15, w,
+		0., epsilon, w->limit,
+		quad_rule, w,
 		&result,
 		&abserr);
 	
 	gsl_integration_workspace_free(w);
-	// gsl_integration_workspace_free(w_inner);
-	CHECK(result == Catch::Approx(7./6.).epsilon(1e-12));
+}
+
+TEST_CASE("GSL-basic", "[gsl]") 
+{
+    double result = 0, abserr = 0;
+	gsl_integration_workspace* w = gsl_integration_workspace_alloc(1000);
+
+	constexpr double epsilon = 1e-12;
+	constexpr int quad_rule = GSL_INTEG_GAUSS61;
+
+    gsl_function f;
+	f.function = [](double x, void * p) -> double {
+		return x * x * sin(x);
+	};
+
+	int status = gsl_integration_qag(
+		&f, 0., 1., 
+		0., epsilon, w->limit,
+		quad_rule, w,
+		&result,
+		&abserr);
+	
+	gsl_integration_workspace_free(w);
+	CHECK(result == Catch::Approx(-2 + 2 * sin(1.) + cos(1.)).epsilon(1e-8));
 }
